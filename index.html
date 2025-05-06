@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flappy Bird Của Bạn</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center; /* Căn giữa theo chiều ngang */
+            align-items: center;    /* Căn giữa theo chiều dọc */
+            min-height: 100vh;       /* Đảm bảo body chiếm toàn bộ chiều cao viewport */
+            background-color: #87CEEB;
+        }
+        canvas {
+            display: block; /* Loại bỏ khoảng trắng thừa dưới canvas */
+            border: 2px solid black;
+            background-color: #ADD8E6;
+            max-width: 100%;    /* Không vượt quá chiều rộng của phần tử cha */
+            max-height: 100%;   /* Không vượt quá chiều cao của phần tử cha */
+            width: auto;        /* Tự động điều chỉnh chiều rộng theo tỷ lệ */
+            height: auto;       /* Tự động điều chỉnh chiều cao theo tỷ lệ */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="480" height="640"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>
