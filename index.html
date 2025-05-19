@@ -31,29 +31,28 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Dùng ảnh từ GitHub
+        // Load hình ảnh
         const birdImg = new Image();
-        birdImg.src = 'https://raw.githubusercontent.com/thaiok2012/Flappy-bird/b264e0b27880fbb894e8f567dc173cca177ee151/assets/yellowbird-downflap.png';
+        birdImg.src = 'https://github.com/thaiok2012/Flappy-bird/blob/b264e0b27880fbb894e8f567dc173cca177ee151/assets/yellowbird-downflap.png?raw=true';
 
         const pipeImg = new Image();
-        pipeImg.src = 'https://raw.githubusercontent.com/thaiok2012/Flappy-bird/b264e0b27880fbb894e8f567dc173cca177ee151/assets/pipe-green.png';
+        pipeImg.src = 'https://github.com/thaiok2012/Flappy-bird/blob/b264e0b27880fbb894e8f567dc173cca177ee151/assets/pipe-green.png?raw=true';
 
         const backgroundImg = new Image();
-        backgroundImg.src = 'https://raw.githubusercontent.com/thaiok2012/Flappy-bird/b264e0b27880fbb894e8f567dc173cca177ee151/assets/background-day.png';
+        backgroundImg.src = 'https://github.com/thaiok2012/Flappy-bird/blob/b264e0b27880fbb894e8f567dc173cca177ee151/assets/background-day.png?raw=true';
 
         const gameOverImg = new Image();
-        gameOverImg.src = 'https://raw.githubusercontent.com/thaiok2012/Flappy-bird/b264e0b27880fbb894e8f567dc173cca177ee151/assets/gameover.png';
+        gameOverImg.src = 'https://github.com/thaiok2012/Flappy-bird/blob/b264e0b27880fbb894e8f567dc173cca177ee151/assets/gameover.png?raw=true';
 
         const startScreenImg = new Image();
-        startScreenImg.src = 'https://raw.githubusercontent.com/thaiok2012/Flappy-bird/b264e0b27880fbb894e8f567dc173cca177ee151/assets/message.png';
+        startScreenImg.src = 'https://github.com/thaiok2012/Flappy-bird/blob/b264e0b27880fbb894e8f567dc173cca177ee151/assets/message.png?raw=true';
 
-        // Âm thanh từ GitHub
+        // Âm thanh
         const flapSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/wing.wav');
         const scoreSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/point.wav');
         const hitSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/hit.wav');
         const gameOverSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/die.wav');
 
-        let gameOverSoundPlayed = false;
         let birdX = 100;
         let birdY = canvas.height / 2;
         const birdWidth = 50;
@@ -68,6 +67,7 @@
         let pipeGap;
         let gameStarted = false;
         let gameOver = false;
+        let gameOverSoundPlayed = false;
         const pipeWidth = 70;
 
         function drawBird() {
@@ -80,7 +80,6 @@
             ctx.rotate(Math.PI);
             ctx.drawImage(pipeImg, 0, 0, pipeWidth, pipe.topHeight);
             ctx.restore();
-
             ctx.drawImage(pipeImg, pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
         }
 
@@ -157,14 +156,10 @@
                     gameOverSound.play();
                     gameOverSoundPlayed = true;
                 }
-                canvas.addEventListener('mousedown', resetGame);
-                canvas.addEventListener('touchstart', resetGame);
             } else {
                 if (startScreenImg.complete) {
                     ctx.drawImage(startScreenImg, canvas.width / 2 - startScreenImg.width / 2, canvas.height / 2 - startScreenImg.height / 2);
                 }
-                canvas.addEventListener('mousedown', startGame);
-                canvas.addEventListener('touchstart', startGame);
             }
 
             drawBird();
@@ -186,34 +181,30 @@
             gameSpeed = 2;
             pipeGap = pipeGapBase;
             gameOverSoundPlayed = false;
-            canvas.removeEventListener('mousedown', startGame);
-            canvas.removeEventListener('touchstart', startGame);
         }
 
         function resetGame() {
-            gameStarted = true;
-            gameOver = false;
-            birdY = canvas.height / 2;
-            velocity = 0;
-            pipes = [];
-            score = 0;
-            gameSpeed = 2;
-            pipeGap = pipeGapBase;
-            gameOverSoundPlayed = false;
-            canvas.removeEventListener('mousedown', resetGame);
-            canvas.removeEventListener('touchstart', resetGame);
+            startGame();
         }
 
         canvas.addEventListener('mousedown', () => {
-            if (gameStarted && !gameOver) flap();
-        });
-        canvas.addEventListener('touchstart', () => {
-            if (gameStarted && !gameOver) flap();
+            if (!gameStarted) startGame();
+            else if (gameOver) resetGame();
+            else flap();
         });
 
+        canvas.addEventListener('touchstart', () => {
+            if (!gameStarted) startGame();
+            else if (gameOver) resetGame();
+            else flap();
+        });
+
+        // Điều khiển bằng phím số 9 trên remote
         window.addEventListener('keydown', (event) => {
             if (event.key === '9') {
-                if (gameStarted && !gameOver) flap();
+                if (!gameStarted) startGame();
+                else if (gameOver) resetGame();
+                else flap();
             }
         });
 
