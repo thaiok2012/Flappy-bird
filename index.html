@@ -1,165 +1,241 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Flappy Bird Pro</title>
-  <style>
-    html, body {
-      margin: 0;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      background: skyblue;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flappy Bird Của Bạn</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center; /* Căn giữa theo chiều ngang */
+            align-items: center;    /* Căn giữa theo chiều dọc */
+            min-height: 100vh;       /* Đảm bảo body chiếm toàn bộ chiều cao viewport */
+            background-color: #87CEEB;
+        }
+        canvas {
+            display: block; /* Loại bỏ khoảng trắng thừa dưới canvas */
+            border: 2px solid black;
+            background-color: #ADD8E6;
+            max-width: 100%;    /* Không vượt quá chiều rộng của phần tử cha */
+            max-height: 100%;   /* Không vượt quá chiều cao của phần tử cha */
+            width: auto;        /* Tự động điều chỉnh chiều rộng theo tỷ lệ */
+            height: auto;       /* Tự động điều chỉnh chiều cao theo tỷ lệ */
+        }
+    </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
-<audio id="flapSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
-<audio id="bgMusic" src="https://cdn.pixabay.com/audio/2022/03/15/audio_d66589ed2f.mp3" loop autoplay></audio>
+    <canvas id="gameCanvas" width="480" height="640"></canvas>
 
-<script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const flapSound = document.getElementById("flapSound");
-const bgMusic = document.getElementById("bgMusic");
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-let birdImg = new Image();
-let bgImg = new Image();
-let pipeTopImg = new Image();
-let pipeBottomImg = new Image();
-birdImg.src = "https://i.imgur.com/OdL0XPt.png";
-bgImg.src = "https://i.imgur.com/rf5kB3B.png";
-pipeTopImg.src = "https://i.imgur.com/YLhCqRH.png";
-pipeBottomImg.src = "https://i.imgur.com/6flbV9N.png";
+        // Load hình ảnh
+        const birdImg = new Image();
+        birdImg.src = 'https://i.imgur.com/PrIKqEY.png';
 
-let bird = { x: 80, y: 150, width: 34, height: 24, velocity: 0 };
-let gravity = 0.5;
-let jump = -8;
-let pipes = [];
-let score = 0;
-let highScore = 0;
-let gameOver = false;
-let gameStarted = false;
-let frames = 0;
+        const pipeImg = new Image();
+        pipeImg.src = 'https://i.imgur.com/3w56QSo.png';
 
-function resetGame() {
-  bird.y = 150;
-  bird.velocity = 0;
-  pipes = [];
-  score = 0;
-  frames = 0;
-  gameOver = false;
-}
+        const backgroundImg = new Image();
+        backgroundImg.src = 'https://i.imgur.com/Avt54U3.png';
 
-function createPipe() {
-  let topHeight = Math.random() * 200 + 50;
-  let gap = 150;
-  pipes.push({
-    x: canvas.width,
-    top: topHeight,
-    bottom: topHeight + gap,
-    width: 52,
-  });
-}
+        const gameOverImg = new Image();
+        gameOverImg.src = 'https://i.imgur.com/qjW3DIh.png';
 
-function draw() {
-  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        const startScreenImg = new Image();
+        startScreenImg.src = 'https://i.imgur.com/VsYPo9N.png';
 
-  if (!gameStarted) {
-    ctx.fillStyle = "white";
-    ctx.font = "32px sans-serif";
-    ctx.fillText("Flappy Bird", 110, 250);
-    ctx.font = "20px sans-serif";
-    ctx.fillText("Nhấn để bắt đầu", 120, 300);
-    return;
-  }
+        // Load âm thanh từ GitHub "Con-chim-ngu"
+        const flapSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/wing.wav');
+        const scoreSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/point.wav');
+        const hitSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/hit.wav');
+        const gameOverSound = new Audio('https://raw.githubusercontent.com/thaiok2012/Con-chim-ngu/3a6e8ccbcc0a879d1e96d6d87ba9f38b90f382e2/Sound/die.wav');
 
-  // Chim
-  bird.velocity += gravity;
-  bird.y += bird.velocity;
-  ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+        let gameOverSoundPlayed = false;
 
-  // Ống nước
-  pipes.forEach(pipe => {
-    pipe.x -= 2;
-    ctx.drawImage(pipeTopImg, pipe.x, pipe.top - 320, pipe.width, 320);
-    ctx.drawImage(pipeBottomImg, pipe.x, pipe.bottom, pipe.width, 320);
+        // Các biến cơ bản
+        let birdX = 100;
+        let birdY = canvas.height / 2;
+        const birdWidth = 50;
+        const birdHeight = 35;
+        let gravity = 0.5;
+        let velocity = 0;
+        let flapStrength = -10;
+        let pipes = [];
+        let score = 0;
+        let gameSpeed = 2;
+        let pipeGapBase = 200;
+        let pipeGap;
+        let gameStarted = false;
+        let gameOver = false;
+        const pipeWidth = 70;
 
-    // Va chạm
-    if (
-      bird.x < pipe.x + pipe.width &&
-      bird.x + bird.width > pipe.x &&
-      (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)
-    ) {
-      gameOver = true;
-    }
+        function drawBird() {
+            ctx.drawImage(birdImg, birdX - birdWidth / 2, birdY - birdHeight / 2, birdWidth, birdHeight);
+        }
 
-    // Cộng điểm
-    if (pipe.x + pipe.width === bird.x) score++;
-  });
+        function drawPipe(pipe) {
+            ctx.save();
+            ctx.translate(pipe.x + pipeWidth, pipe.topHeight);
+            ctx.rotate(Math.PI);
+            ctx.drawImage(pipeImg, 0, 0, pipeWidth, pipe.topHeight);
+            ctx.restore();
 
-  // Xóa ống cũ
-  pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+            ctx.drawImage(pipeImg, pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+        }
 
-  // Thêm ống mới
-  if (frames % 100 === 0) createPipe();
+        function createPipe() {
+            let topHeight = Math.floor(Math.random() * (canvas.height / 2)) + 50;
+            let bottomY = topHeight + pipeGap;
+            pipes.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: bottomY,
+                width: pipeWidth,
+                passed: false
+            });
+        }
 
-  // Chạm đất hoặc trần
-  if (bird.y + bird.height > canvas.height || bird.y < 0) {
-    gameOver = true;
-  }
+        function updateDifficulty() {
+            if (score >= 7) {
+                gameSpeed = 2 + (score - 6) * 0.1;
+                pipeGap = Math.max(pipeGapBase - (score - 6) * 3, 130);
+            } else {
+                gameSpeed = 2;
+                pipeGap = pipeGapBase;
+            }
+        }
 
-  // Điểm
-  ctx.fillStyle = "black";
-  ctx.font = "20px sans-serif";
-  ctx.fillText("Điểm: " + score, 10, 30);
-  ctx.fillText("Kỷ lục: " + highScore, 10, 55);
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Game Over
-  if (gameOver) {
-    ctx.fillStyle = "red";
-    ctx.font = "32px sans-serif";
-    ctx.fillText("Game Over", 120, 280);
-    ctx.font = "20px sans-serif";
-    ctx.fillText("Nhấn để chơi lại", 120, 320);
-    if (score > highScore) highScore = score;
-  }
-}
+            if (backgroundImg.complete) {
+                ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+            }
 
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  draw();
-  if (!gameOver) {
-    frames++;
-    requestAnimationFrame(gameLoop);
-  }
-}
+            if (gameStarted && !gameOver) {
+                updateDifficulty();
 
-// Nhảy
-function flap() {
-  if (!gameStarted) {
-    gameStarted = true;
-    resetGame();
-    bgMusic.play();
-    gameLoop();
-  }
-  if (!gameOver) {
-    bird.velocity = jump;
-    flapSound.play();
-  } else {
-    resetGame();
-    gameLoop();
-  }
-}
+                velocity += gravity;
+                birdY += velocity;
 
-// Bắt sự kiện
-canvas.addEventListener("click", flap);
-canvas.addEventListener("touchstart", flap);
-document.addEventListener("keydown", e => {
-  if (e.code === "Space" || e.key === "9") flap();
-});
-</script>
+                if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - (300 - score * 5)) {
+                    createPipe();
+                }
+
+                pipes.forEach(pipe => {
+                    pipe.x -= gameSpeed;
+                    drawPipe(pipe);
+
+                    if (
+                        birdX + birdWidth / 2 > pipe.x &&
+                        birdX - birdWidth / 2 < pipe.x + pipeWidth &&
+                        (birdY - birdHeight / 2 < pipe.topHeight || birdY + birdHeight / 2 > pipe.bottomY)
+                    ) {
+                        if (!gameOver) hitSound.play();
+                        gameOver = true;
+                    }
+
+                    if (pipe.x + pipeWidth < birdX - birdWidth / 2 && !pipe.passed) {
+                        score++;
+                        pipe.passed = true;
+                        scoreSound.play();
+                    }
+                });
+
+                if (birdY + birdHeight / 2 > canvas.height || birdY - birdHeight / 2 < 0) {
+                    gameOver = true;
+                }
+
+                ctx.fillStyle = 'white';
+                ctx.font = '30px Arial';
+                ctx.fillText('Điểm: ' + score, 10, 30);
+            } else if (gameOver) {
+                if (gameOverImg.complete) {
+                    ctx.drawImage(gameOverImg, canvas.width / 2 - gameOverImg.width / 2, canvas.height / 2 - gameOverImg.height / 2);
+                } else {
+                    ctx.fillStyle = 'red';
+                    ctx.font = '40px Arial';
+                    ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2 - 20);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '20px Arial';
+                    ctx.fillText('Điểm số: ' + score, canvas.width / 2 - 70, canvas.height / 2 + 20);
+                    ctx.fillText('Nhấn để chơi lại', canvas.width / 2 - 90, canvas.height / 2 + 60);
+                }
+                if (!gameOverSoundPlayed) {
+                    gameOverSound.play();
+                    gameOverSoundPlayed = true;
+                }
+                canvas.addEventListener('mousedown', resetGame);
+                canvas.addEventListener('touchstart', resetGame);
+            } else {
+                if (startScreenImg.complete) {
+                    ctx.drawImage(startScreenImg, canvas.width / 2 - startScreenImg.width / 2, canvas.height / 2 - startScreenImg.height / 2);
+                } else {
+                    ctx.fillStyle = 'black';
+                    ctx.font = '30px Arial';
+                    ctx.fillText('Nhấn để bắt đầu', canvas.width / 2 - 120, canvas.height / 2);
+                }
+                canvas.addEventListener('mousedown', startGame);
+                canvas.addEventListener('touchstart', startGame);
+            }
+
+            drawBird();
+            requestAnimationFrame(update);
+        }
+
+        function flap() {
+            velocity = flapStrength;
+            flapSound.play();
+        }
+
+        function startGame() {
+            gameStarted = true;
+            gameOver = false;
+            birdY = canvas.height / 2;
+            velocity = 0;
+            pipes = [];
+            score = 0;
+            gameSpeed = 2;
+            pipeGap = pipeGapBase;
+            gameOverSoundPlayed = false;
+            canvas.removeEventListener('mousedown', startGame);
+            canvas.removeEventListener('touchstart', startGame);
+        }
+
+        function resetGame() {
+            gameStarted = true;
+            gameOver = false;
+            birdY = canvas.height / 2;
+            velocity = 0;
+            pipes = [];
+            score = 0;
+            gameSpeed = 2;
+            pipeGap = pipeGapBase;
+            gameOverSoundPlayed = false;
+            canvas.removeEventListener('mousedown', resetGame);
+            canvas.removeEventListener('touchstart', resetGame);
+        }
+
+        // Bấm chuột hoặc chạm để flap chim bay
+        canvas.addEventListener('mousedown', () => {
+            if (gameStarted && !gameOver) flap();
+        });
+        canvas.addEventListener('touchstart', () => {
+            if (gameStarted && !gameOver) flap();
+        });
+
+        // Thêm bắt phím bấm, nút 9 trên remote TV LG (key '9')
+        window.addEventListener('keydown', (event) => {
+            if (event.key === '9') {
+                if (gameStarted && !gameOver) flap();
+            }
+        });
+
+        pipeGap = pipeGapBase;
+        requestAnimationFrame(update);
+    </script>
 </body>
 </html>
